@@ -30,6 +30,26 @@ docker run -d \
   docker.io/oleduc/docker-obsidian-livesync-couchdb:master
 ```
 
+Or via docker-compose
+```yaml
+version: "3.8"
+
+services:
+  couchdb-obsidian-livesync:
+    image: docker.io/oleduc/docker-obsidian-livesync-couchdb:master
+    container_name: couchdb-obsidian-livesync
+    restart: always
+    environment:
+      SERVER_URL: ${SERVER_URL}
+      COUCHDB_USER: ${COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+      COUCHDB_DATABASE: ${COUCHDB_DATABASE}
+    ports:
+      - "${COUCHDB_PORT:-5984}:5984"
+    volumes:
+      - /container-data/obsidian-livesync:/opt/couchdb/data
+```
+
 ## Testing Configuration
 
 To verify the updated configuration:
