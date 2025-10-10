@@ -9,13 +9,16 @@ The container is built and published automatically via GitHub Actions.
 ## Features
 - **Automated CouchDB Configuration**: Extracts necessary settings for Obsidian LiveSync from the bash script created by the plugin maintainer.
 - **Build time configuration**: Configures couchDB at build time via configuration files instead of using couchDB APIs which simplifies the process.
+- **Multi-Architecture Support**: Native support for both AMD64 (x86_64) and ARM64 architectures, including Apple Silicon Macs.
 - **Auto-Publishing**: Docker images are automatically built and pushed to a container registry via GitHub Actions.
 
 ## Pulling the Docker Image
 To use the pre-built image, pull it from the container registry:
 ```bash
-docker pull docker.io/docker-obsidian-livesync-couchdb:latest
+docker pull docker.io/oleduc/docker-obsidian-livesync-couchdb:latest
 ```
+
+**Multi-Architecture Support**: This image supports both AMD64 (x86_64) and ARM64 architectures, including Apple Silicon Macs, ARM-based servers, and other ARM64 devices. Docker will automatically pull the correct architecture for your platform.
 ## Running the Container
 
 Run the container with CouchDB configured for Obsidian LiveSync:

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "tasks": {
+    "test": "deno run --allow-net --allow-read --allow-write test-compatibility.ts"
+  },
+  "imports": {
+    "@std/assert": "https://deno.land/std@0.208.0/assert/mod.ts"
+  }
+}
