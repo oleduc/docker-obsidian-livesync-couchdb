@@ -33,14 +33,3 @@ jobs:
           repository: oleduc/docker-obsidian-livesync-couchdb
           short-description: ${{ steps.description.outputs.short_description }}
           readme-filepath: ./README.md
-
-  sync-repository-link:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    
-    steps:
-      - name: Link GitHub repository to Docker Hub
-        run: |
-          echo "Manual step: Ensure Docker Hub repository is linked to GitHub at:"
-          echo "https://hub.docker.com/r/${{ github.repository }}/settings/general"
-          echo "Set source repository to: ${{ github.repository }}"
