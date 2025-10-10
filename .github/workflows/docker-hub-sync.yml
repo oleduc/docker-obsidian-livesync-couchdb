@@ -28,9 +28,9 @@ jobs:
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v4
         with:
-          username: ${{ github.actor }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          repository: ${{ github.repository }}
+          repository: oleduc/docker-obsidian-livesync-couchdb
           short-description: ${{ steps.description.outputs.short_description }}
           readme-filepath: ./README.md
 
