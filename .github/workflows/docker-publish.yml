@@ -35,6 +35,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # This docker image depends on the upstream script 
+      - name: Test upstream compatibility
+        run: deno run --allow-net --allor-read --allow-write test-compatibility.ts
+
+
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign

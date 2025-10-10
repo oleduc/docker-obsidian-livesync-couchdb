@@ -7,6 +7,7 @@
 
 // Note: Running in Deno container - imports will resolve correctly there
 import { assertEquals, assertExists } from "@std/assert";
+import { exit } from 'node:process';
 
 interface Setting {
   section: string;
@@ -187,7 +188,7 @@ async function saveRemoteScript(): Promise<void> {
 /**
  * Generate detailed compatibility report
  */
-async function generateReport(): Promise<void> {
+async function generateReport(): Promise<boolean> {
   console.log("🔍 CouchDB Setup Compatibility Test");
   console.log("=" .repeat(50));
   
@@ -232,7 +233,9 @@ async function generateReport(): Promise<void> {
     console.log("   - Review the downloaded script for changes");
     console.log("   - Update regex patterns in couchdb-setup.ts if needed");
     console.log("   - Test with actual CouchDB configuration");
+    return false
   }
+  return true
 }
 
 // Main execution
@@ -240,9 +243,10 @@ if (import.meta.main) {
   console.log("🚀 Starting compatibility test...\n");
   
   await saveRemoteScript();
-  await generateReport();
+  const isSuccess = await generateReport();
   
   console.log("\n📝 Recommendation:");
   console.log("   Run this test regularly to ensure ongoing compatibility");
   console.log("   especially before deploying new versions.");
+  exit(Number(!isSuccess))
 }
