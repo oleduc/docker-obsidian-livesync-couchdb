@@ -1,0 +1,19 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+*.md
+
+# Development files
+.vscode
+.idea
+
+# CI/CD
+.github/workflows
+
+# Temporary files
+*.tmp
+*.log

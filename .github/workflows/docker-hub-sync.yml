@@ -1,0 +1,46 @@
+name: Sync to Docker Hub
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'README.md'
+      - 'Dockerfile'
+  release:
+    types: [published]
+
+jobs:
+  sync-description:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'release'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Extract short description from README
+        id: description
+        run: |
+          # Extract the first paragraph after the title as short description
+          SHORT_DESC=$(sed -n '3p' README.md | sed 's/^This repository/A Docker container that/' | head -c 100)
+          echo "short_description=${SHORT_DESC}..." >> $GITHUB_OUTPUT
+      
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          repository: ${{ github.repository }}
+          short-description: ${{ steps.description.outputs.short_description }}
+          readme-filepath: ./README.md
+
+  sync-repository-link:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Link GitHub repository to Docker Hub
+        run: |
+          echo "Manual step: Ensure Docker Hub repository is linked to GitHub at:"
+          echo "https://hub.docker.com/r/${{ github.repository }}/settings/general"
+          echo "Set source repository to: ${{ github.repository }}"
