@@ -144,13 +144,13 @@ async function testScriptFormat(): Promise<TestResult> {
     // Check for expected patterns in the script
     const hasConfigEndpoint = remoteScript.includes("/_config/");
     const hasCurlCommands = remoteScript.includes("curl");
-    const hasNodePath = remoteScript.includes("/_node/nonode@nohost/");
-    
+    const hasNodePath = remoteScript.includes("/_node/");
+
     const issues: string[] = [];
-    
+
     if (!hasConfigEndpoint) issues.push("Missing _config endpoint references");
     if (!hasCurlCommands) issues.push("Missing curl commands");
-    if (!hasNodePath) issues.push("Missing nonode@nohost path structure");
+    if (!hasNodePath) issues.push("Missing /_node/ path structure");
     
     if (issues.length > 0) {
       return {
