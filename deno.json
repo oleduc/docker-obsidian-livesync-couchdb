@@ -8,6 +8,6 @@
     "test": "deno run --allow-net --allow-read --allow-write test-compatibility.ts"
   },
   "imports": {
-    "@std/assert": "https://deno.land/std@0.208.0/assert/mod.ts"
+    "@std/assert": "jsr:@std/assert@1.0.19"
   }
 }

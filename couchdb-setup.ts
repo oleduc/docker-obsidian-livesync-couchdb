@@ -47,9 +47,9 @@ function parseScript(filePath: string): Setting[] {
     const trimmed = line.trim();
 
     // Regex to match lines like:
-    // curl -X PUT "${hostname}/_node/nonode@nohost/_config/chttpd/require_valid_user" -d '"true"' ...
+    // curl -X PUT "${hostname}/_node/${node}/_config/chttpd/require_valid_user" -d '"true"' ...
     const match = trimmed.match(
-      /curl.*\/_node\/nonode@nohost\/_config\/([\w\-\/]+).*?-d\s+\'\"(.*?)\"\'.*$/i
+      /curl.*\/_node\/[^/]+\/_config\/([\w\-\/]+).*?-d\s+\'\"(.*?)\"\'.*$/i
     );
 
     if (match) {

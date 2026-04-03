@@ -47,9 +47,9 @@ function parseScript(scriptContent: string): Setting[] {
     const trimmed = line.trim();
 
     // Regex to match lines like:
-    // curl -X PUT "${hostname}/_node/nonode@nohost/_config/chttpd/require_valid_user" -d '"true"' ...
+    // curl -X PUT "${hostname}/_node/${node}/_config/chttpd/require_valid_user" -d '"true"' ...
     const match = trimmed.match(
-      /curl.*\/_node\/nonode@nohost\/_config\/([\w\-\/]+).*?-d\s+\'\"(.*?)\"\'.*$/i
+      /curl.*\/_node\/[^/]+\/_config\/([\w\-\/]+).*?-d\s+\'\"(.*?)\"\'.*$/i
     );
 
     if (match) {
@@ -144,13 +144,13 @@ async function testScriptFormat(): Promise<TestResult> {
     // Check for expected patterns in the script
     const hasConfigEndpoint = remoteScript.includes("/_config/");
     const hasCurlCommands = remoteScript.includes("curl");
-    const hasNodePath = remoteScript.includes("/_node/nonode@nohost/");
-    
+    const hasNodePath = remoteScript.includes("/_node/");
+
     const issues: string[] = [];
-    
+
     if (!hasConfigEndpoint) issues.push("Missing _config endpoint references");
     if (!hasCurlCommands) issues.push("Missing curl commands");
-    if (!hasNodePath) issues.push("Missing nonode@nohost path structure");
+    if (!hasNodePath) issues.push("Missing /_node/ path structure");
     
     if (issues.length > 0) {
       return {
