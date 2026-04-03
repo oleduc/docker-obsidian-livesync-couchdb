@@ -1,4 +1,4 @@
-FROM docker.io/couchdb:3.5.0
+FROM docker.io/couchdb:3.5.1
 
 # Add metadata labels for Docker Hub integration
 LABEL org.opencontainers.image.title="CouchDB for Obsidian LiveSync"
