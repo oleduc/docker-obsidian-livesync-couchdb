@@ -1,13 +1,16 @@
 # CouchDB Configuration for Obsidian LiveSync
 
-This repository provides a Docker container for configuring CouchDB specifically for use with [Obsidian LiveSync](https://github.com/vrtmrz/obsidian-livesync). It automates the setup process by parsing the bash script (`couchdb-init.sh`) provided by obsidian-livesync's maintainer and updating CouchDB's configuration file (`local.ini`) according to the settings the plugin needs.
+This repository provides a Docker container for configuring CouchDB specifically for use with [Obsidian LiveSync](https://github.com/vrtmrz/obsidian-livesync). It automates the setup process by parsing the CouchDB provisioning source (`provision.ts`) provided by obsidian-livesync's maintainer and updating CouchDB's configuration file (`local.ini`) according to the settings the plugin needs.
 
 The container is built and published automatically via GitHub Actions.
 
 [Docker Hub Page](https://hub.docker.com/r/oleduc/docker-obsidian-livesync-couchdb)
 
+For a complete deployment, reverse proxy, and client bootstrap procedure, see the [technical deployment guide](docs/deployment.md).
+
 ## Features
-- **Automated CouchDB Configuration**: Extracts necessary settings for Obsidian LiveSync from the bash script created by the plugin maintainer.
+- **Automated CouchDB Configuration**: Extracts necessary settings for Obsidian LiveSync from the provisioning source maintained by the plugin author.
+- **Versioned Setup URI Generator**: Bundles the generator and locked dependency graph from the Obsidian LiveSync commit recorded in `LIVESYNC_VERSION`.
 - **Build time configuration**: Configures couchDB at build time via configuration files instead of using couchDB APIs which simplifies the process.
 - **Multi-Architecture Support**: Native support for both AMD64 (x86_64) and ARM64 architectures, including Apple Silicon Macs.
 - **Auto-Publishing**: Docker images are automatically built and pushed to a container registry via GitHub Actions.
@@ -33,7 +36,7 @@ This project uses a sophisticated CI/CD pipeline to ensure reliable Docker image
 The workflow consists of two main jobs:
 
 1. **Build Job** (runs on push/PR):
-   - Runs compatibility tests with upstream Obsidian LiveSync script
+   - Runs compatibility tests with the upstream Obsidian LiveSync provisioning source
    - Builds multi-platform Docker images 
    - Uses GitHub Actions cache for efficiency
    - Validates the build without publishing
@@ -68,6 +71,24 @@ This repository is integrated with Docker Hub at [`oleduc/docker-obsidian-livesy
 
 Architecture-specific tags are automatically handled by Docker's manifest lists.
 
+### Generating a Setup URI
+
+Each image includes the compatible Obsidian LiveSync Setup URI generator. The generator does not contact CouchDB; it creates the encrypted configuration used by the first LiveSync client.
+
+```bash
+docker run --rm \
+  -e hostname=https://obsidian.example.com \
+  -e database=obsidiannotes \
+  -e username=obsidian \
+  -e password='<COUCHDB_PASSWORD>' \
+  -e passphrase='<VAULT_ENCRYPTION_PASSPHRASE>' \
+  -e uri_passphrase='<SETUP_URI_PASSPHRASE>' \
+  docker.io/oleduc/docker-obsidian-livesync-couchdb:latest \
+  generate-setup-uri
+```
+
+`passphrase` encrypts the synchronized Vault. `uri_passphrase` encrypts only the Setup URI and should use a different value. If `uri_passphrase` is omitted, the generator creates a random value and prints it once.
+
 ### Pulling the Docker Image
 To use the pre-built image, pull it from the container registry:
 ```bash
@@ -82,10 +103,8 @@ Run the container with CouchDB configured for Obsidian LiveSync:
 
 ```
 docker run -d \
-  -e SERVER_DOMAIN=example.com \
   -e COUCHDB_USER=username \
   -e COUCHDB_PASSWORD=password \
-  -e COUCHDB_DATABASE=obsidian \
   -p 5984:5984 \
   docker.io/oleduc/docker-obsidian-livesync-couchdb:master
 ```
@@ -100,10 +119,8 @@ services:
     container_name: couchdb-obsidian-livesync
     restart: always
     environment:
-      SERVER_URL: ${SERVER_URL}
       COUCHDB_USER: ${COUCHDB_USER}
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
-      COUCHDB_DATABASE: ${COUCHDB_DATABASE}
     ports:
       - "${COUCHDB_PORT:-5984}:5984"
     volumes:

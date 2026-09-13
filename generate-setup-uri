@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+exec deno run \
+    --config=/scripts/flyio/deno.jsonc \
+    --lock=/scripts/flyio/deno.lock \
+    --frozen \
+    --allow-env \
+    /scripts/setup/generate_setup_uri.ts
