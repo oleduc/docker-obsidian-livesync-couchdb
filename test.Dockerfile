@@ -1,9 +1,11 @@
-FROM docker.io/denoland/deno:2.7.11
+FROM docker.io/denoland/deno:2.9.6
 
 WORKDIR /app
 
 # Copy the test files
 COPY test-compatibility.ts .
+COPY couchdb-setup.ts .
+COPY LIVESYNC_VERSION .
 COPY deno.json .
 
 # Pre-cache dependencies

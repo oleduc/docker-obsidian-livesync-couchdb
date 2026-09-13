@@ -20,55 +20,61 @@ interface Setting {
 const CONFIG_FILE = path.resolve("/opt/couchdb/etc/local.ini");
 
 /**
- * The Bash script (couchdb-init.sh) containing `curl` commands that
- * configure CouchDB at runtime. We parse these to extract the config
- * keys and values.
+ * The upstream TypeScript provisioning source containing the settings
+ * used to configure CouchDB at runtime.
  */
-const SCRIPT_FILE = path.resolve("./couchdb-init.sh");
+const SCRIPT_FILE = path.resolve("./couchdb/provision.ts");
 
 /**
- * Parses the given Bash script, looking for `curl` commands
- * that configure CouchDB via the `_config` endpoint. It then
- * extracts each setting's section, key, and value.
+ * Parses the settings array from the upstream provisioning source.
  *
- * @param filePath - The path to the Bash script file.
+ * @param scriptContent - The upstream provisioning source.
  * @returns An array of `Setting` objects representing the configuration.
- * @throws If the file does not exist.
+ * @throws If a setting value uses an unsupported expression.
  */
-function parseScript(filePath: string): Setting[] {
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Script file not found: ${filePath}`);
-  }
-
-  const scriptLines = fs.readFileSync(filePath, "utf-8").split("\n");
+export function parseProvisionScript(scriptContent: string): Setting[] {
   const settings: Setting[] = [];
+  const defaultOrigins = scriptContent.match(
+    /const DEFAULT_ORIGINS\s*=\s*"([^"]+)"/,
+  )?.[1];
+  const tuplePattern =
+    /\[\s*"[^"]+"\s*,\s*"([\w-]+)\/([\w-]+)"\s*,\s*(?:'((?:\\.|[^'])*)'|JSON\.stringify\(origins\))\s*,?\s*\]/g;
 
-  for (const line of scriptLines) {
-    const trimmed = line.trim();
+  for (const match of scriptContent.matchAll(tuplePattern)) {
+    const [, section, key, literalBody] = match;
+    let value: string;
 
-    // Regex to match lines like:
-    // curl -X PUT "${hostname}/_node/${node}/_config/chttpd/require_valid_user" -d '"true"' ...
-    const match = trimmed.match(
-      /curl.*\/_node\/[^/]+\/_config\/([\w\-\/]+).*?-d\s+\'\"(.*?)\"\'.*$/i
-    );
-
-    if (match) {
-      const [, fullKey, value] = match;
-
-      // "fullKey" looks like "chttpd/require_valid_user"
-      // Split on the first slash to separate section from key
-      const [section, key] = fullKey.split("/", 2);
-
-      settings.push({ section, key, value });
+    if (literalBody !== undefined) {
+      const jsonBody: string = JSON.parse(
+        `"${literalBody.replaceAll('"', '\\"')}"`,
+      );
+      const parsedBody: unknown = JSON.parse(jsonBody);
+      if (typeof parsedBody !== "string") {
+        throw new Error(`Unsupported value for ${section}/${key}`);
+      }
+      value = parsedBody;
+    } else if (defaultOrigins !== undefined) {
+      value = defaultOrigins;
+    } else {
+      throw new Error("DEFAULT_ORIGINS not found in provisioning source");
     }
+
+    settings.push({ section, key, value });
   }
+
+  if (!/action:\s*"enable_single_node"/.test(scriptContent)) {
+    throw new Error(
+      "Single-node cluster setup not found in provisioning source",
+    );
+  }
+  settings.push({ section: "couchdb", key: "single_node", value: "true" });
 
   return settings;
 }
 
 /**
  * Reads the CouchDB `local.ini` file, then updates or adds new settings
- * based on the parsed list from the Bash script. It preserves existing
+ * based on the parsed list from the provisioning source. It preserves existing
  * structure, handling commented lines and appending new keys at the end
  * of each relevant section (or creating a new section if none is found).
  *
@@ -93,7 +99,7 @@ function updateConfig(filePath: string, settings: Setting[]) {
     sectionSettings[section].push({ section, key, value });
   }
 
-  let currentSection = "";    // Name of the section we're currently parsing
+  let currentSection = ""; // Name of the section we're currently parsing
   let sectionLines: string[] = []; // Lines belonging to the current section
 
   // Iterate over each line in the original file
@@ -108,7 +114,7 @@ function updateConfig(filePath: string, settings: Setting[]) {
           currentSection,
           sectionLines,
           updatedLines,
-          sectionSettings[currentSection]
+          sectionSettings[currentSection],
         );
         // Remove these settings from the dictionary once processed
         delete sectionSettings[currentSection];
@@ -133,7 +139,7 @@ function updateConfig(filePath: string, settings: Setting[]) {
       currentSection,
       sectionLines,
       updatedLines,
-      sectionSettings[currentSection]
+      sectionSettings[currentSection],
     );
     delete sectionSettings[currentSection];
   }
@@ -166,7 +172,7 @@ function finalizeSection(
   section: string,
   sectionLines: string[],
   updatedLines: string[],
-  settings?: Setting[]
+  settings?: Setting[],
 ): void {
   // If there are no settings for this section, just copy lines as they are
   if (!settings || settings.length === 0) {
@@ -176,7 +182,7 @@ function finalizeSection(
 
   // Convert settings into a Map for quick lookups and removals
   const remainingSettings = new Map<string, Setting>(
-    settings.map((s) => [s.key, s])
+    settings.map((s) => [s.key, s]),
   );
 
   // Process each line in the section
@@ -213,14 +219,26 @@ function finalizeSection(
 
 // --- SCRIPT EXECUTION ---
 
-try {
-  console.log("Parsing settings from the Bash script...");
-  const settings = parseScript(SCRIPT_FILE);
+if (import.meta.main) {
+  try {
+    if (!fs.existsSync(SCRIPT_FILE)) {
+      throw new Error(`Provisioning source not found: ${SCRIPT_FILE}`);
+    }
 
-  console.log("Updating CouchDB configuration...");
-  updateConfig(CONFIG_FILE, settings);
+    console.log("Parsing settings from the provisioning source...");
+    const settings = parseProvisionScript(
+      fs.readFileSync(SCRIPT_FILE, "utf-8"),
+    );
+    if (settings.length === 0) {
+      throw new Error("No CouchDB settings found in provisioning source");
+    }
 
-  console.log("Configuration update complete.");
-} catch (error) {
-  console.error(`Error: ${(error as Error).message}`);
+    console.log("Updating CouchDB configuration...");
+    updateConfig(CONFIG_FILE, settings);
+
+    console.log("Configuration update complete.");
+  } catch (error) {
+    console.error(`Error: ${(error as Error).message}`);
+    Deno.exit(1);
+  }
 }
