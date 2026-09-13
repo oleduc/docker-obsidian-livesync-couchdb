@@ -6,6 +6,8 @@ The container is built and published automatically via GitHub Actions.
 
 [Docker Hub Page](https://hub.docker.com/r/oleduc/docker-obsidian-livesync-couchdb)
 
+For a complete deployment, reverse proxy, and client bootstrap procedure, see the [technical deployment guide](docs/deployment.md).
+
 ## Features
 - **Automated CouchDB Configuration**: Extracts necessary settings for Obsidian LiveSync from the provisioning source maintained by the plugin author.
 - **Versioned Setup URI Generator**: Bundles the generator and locked dependency graph from the Obsidian LiveSync commit recorded in `LIVESYNC_VERSION`.
